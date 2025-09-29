@@ -77,6 +77,7 @@ def test_messages(client):
     assert b"&lt;Hello&gt;" in rv.data
     assert b"<strong>HTML</strong> allowed here" in rv.data
 
+
 def test_delete_message(client):
     """Ensure the messages are being deleted"""
     rv = client.get("/delete/1")
@@ -106,7 +107,6 @@ def test_delete_requires_login(client):
     assert data["status"] == 1
     assert data["message"] == "Post Deleted"
 
-    
 
 def test_search_with_query(client):
     """Access /search/ with a query parameter after adding a post"""
