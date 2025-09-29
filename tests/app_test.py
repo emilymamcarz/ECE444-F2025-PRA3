@@ -79,9 +79,33 @@ def test_messages(client):
 
 def test_delete_message(client):
     """Ensure the messages are being deleted"""
-    rv = client.get('/delete/1')
+    rv = client.get("/delete/1")
+    data = json.loads(rv.data)
+    assert data["status"] == 0
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+    rv = client.get("/delete/1")
     data = json.loads(rv.data)
     assert data["status"] == 1
+
+
+def test_delete_requires_login(client):
+    """Ensure deleting a post requires the user to be logged in"""
+    # Attempt to delete without logging in
+    rv = client.get("/delete/1")
+    data = json.loads(rv.data)
+    # Should fail because user is not logged in
+    assert data["status"] == 0
+
+    # Log in
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+
+    # Attempt to delete again (assuming post 1 exists)
+    rv = client.get("/delete/1")
+    data = json.loads(rv.data)
+    # Should succeed
+    assert data["status"] == 1
+    assert data["message"] == "Post Deleted"
+
     
 
 def test_search_with_query(client):
