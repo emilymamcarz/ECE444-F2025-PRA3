@@ -14,6 +14,7 @@ def client():
     app.config["TESTING"] = True
     app.config["DATABASE"] = BASE_DIR.joinpath(TEST_DB)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{BASE_DIR.joinpath(TEST_DB)}"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     with app.app_context():
         db.create_all()  # setup
@@ -81,3 +82,29 @@ def test_delete_message(client):
     rv = client.get('/delete/1')
     data = json.loads(rv.data)
     assert data["status"] == 1
+    
+
+def test_search_with_query(client):
+    """Access /search/ with a query parameter after adding a post"""
+    # Log in and add a post
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+    rv = client.post(
+        "/add",
+        data=dict(title="Test Post", text="Some content"),
+        follow_redirects=True,
+    )
+    assert b"New entry was successfully posted" in rv.data
+
+    # Search with a query
+    rv = client.get("/search/", query_string={"query": "Test"})
+    assert rv.status_code == 200
+    # The added post should appear
+    assert b"Test Post" in rv.data
+    assert b"Some content" in rv.data
+
+    # Search with a query that doesn't match
+    rv = client.get("/search/", query_string={"query": "Nonexistent"})
+    assert rv.status_code == 200
+    # Depending on template, might show "No entries yet" or just no posts
+    # If your template lists entries, just check it doesn't include the post
+    assert b"Test Post" not in rv.data
